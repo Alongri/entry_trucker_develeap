@@ -129,17 +129,65 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         run: |
-          aws ecr get-login-password --region ap-south-1 \
+          aws ecr get-login-password --region $AWS_REGION \
             | docker login --username AWS --password-stdin 884394270539.dkr.ecr.ap-south-1.amazonaws.com
+
       - name: Build Docker image
         run: |
           docker build -t development/entry-trucker:$VERSION .
+
       - name: Tag and push Docker image
         run: |
           docker tag development/entry-trucker:$VERSION 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/entry-trucker:$VERSION
           docker push 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/entry-trucker:$VERSION
+
+  deploy:
+    name: 🚀 Deploy to EC2
+    needs: [push-to-ecr]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/alon-gr.pem
+          chmod 400 ~/.ssh/alon-gr.pem
+
+      - name: SSH and deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/alon-gr.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+
+            echo "🔐 Logging in to ECR..."
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set default.region ap-south-1
+
+            aws ecr get-login-password --region ap-south-1 \
+              | docker login --username AWS --password-stdin 884394270539.dkr.ecr.ap-south-1.amazonaws.com
+
+            echo "📁 Changing to app directory..."
+            cd /home/ubuntu/entry_trucker_develeap
+
+            echo "📉 Stopping old container..."
+            docker compose down
+
+            echo "�� Updating .env with new version..."
+            sed -i 's/^VERSION=.*/VERSION=${{ needs.build-and-test.outputs.version }}/' .env
+
+            echo "�� Pulling updated image from ECR..."
+            docker compose pull
+
+            echo "🚀 Starting new container..."
+            docker compose up -d
+
+            echo "✅ Deployment complete"
+          EOF
 
