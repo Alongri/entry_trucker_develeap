@@ -15,22 +15,37 @@ jobs:
     name: 🧪 Build & Unit Test
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     outputs:
       version: ${{ steps.set-version.outputs.version }}
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: Set version tag
-        id: set-version
+      - name: Bump patch version
+        id: bump-version
         run: |
-          VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
-          if [ -z "$VERSION" ]; then
-            VERSION="0.1.0-dev-${GITHUB_SHA::7}"
+          LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
+          if [[ -z "$LATEST_TAG" ]]; then
+            NEW_VERSION="v1.0.0"
+          else
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$(echo $LATEST_TAG | sed 's/^v//')"
+            PATCH=$((PATCH + 1))
+            NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
           fi
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag "$NEW_VERSION"
+          git push origin "$NEW_VERSION"
+
+          echo "VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Build Docker image
         run: |
@@ -106,15 +121,10 @@ jobs:
         run: |
           gunzip -c flask-app.tar.gz | docker load
 
-      - name: Set version tag
-        id: set-version
-        run: |
-          VERSION=$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
-          if [ -z "$VERSION" ]; then
-            VERSION="0.1.0-dev-${GITHUB_SHA::7}"
-          fi
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Use version from build job
+        run: echo "Using version ${{ needs.build-and-test.outputs.version }}"
+        env:
+          VERSION: ${{ needs.build-and-test.outputs.version }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
