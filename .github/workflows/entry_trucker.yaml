@@ -25,7 +25,8 @@ jobs:
       - name: Set version tag
         id: set-version
         run: |
-          VERSION=latest-$(date +%Y%m%d)-${GITHUB_SHA::7}
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build Docker image
@@ -100,8 +101,9 @@ jobs:
       - name: Set image version
         id: set-version
         run: |
-          VERSION=latest-$(date +%Y%m%d)-${GITHUB_SHA::7}
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
@@ -114,7 +116,9 @@ jobs:
         run: |
           aws ecr get-login-password --region ap-south-1 \
             | docker login --username AWS --password-stdin 884394270539.dkr.ecr.ap-south-1.amazonaws.com
-
+      - name: Build Docker image
+        run: |
+          docker build -t development/entry-trucker:$VERSION .
       - name: Tag and push Docker image
         run: |
           docker tag development/entry-trucker:latest 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/entry-trucker:$VERSION
