@@ -132,6 +132,6 @@ jobs:
           docker build -t development/entry-trucker:$VERSION .
       - name: Tag and push Docker image
         run: |
-          docker tag development/entry-trucker:latest 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/entry-trucker:$VERSION
+          docker tag development/entry-trucker:$VERSION 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/entry-trucker:$VERSION
           docker push 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/entry-trucker:$VERSION
 
