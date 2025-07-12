@@ -19,81 +19,68 @@ jobs:
       version: ${{ steps.set-version.outputs.version }}
 
     steps:
-    # Step 1: Checkout source code
-    - name: Checkout source code
-      uses: actions/checkout@v3
+      - name: Checkout source code
+        uses: actions/checkout@v3
 
-    # Step 2: Set Docker image version
-    - name: Set version tag
-      id: set-version
-      run: |
-        VERSION=latest-$(date +%Y%m%d)-${GITHUB_SHA::7}
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Set version tag
+        id: set-version
+        run: |
+          VERSION=latest-$(date +%Y%m%d)-${GITHUB_SHA::7}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-    # Step 3: Build Docker image from Dockerfile
-    - name: Build Docker image
-      run: |
-        docker build -t $IMAGE_NAME:${{ steps.set-version.outputs.version }} .
+      - name: Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME:${{ steps.set-version.outputs.version }} .
 
-    # Step 4: Run the container in the background
-    - name: Run container
-      run: |
-        docker run -d -p 5000:5000 --name $IMAGE_NAME $IMAGE_NAME:${{ steps.set-version.outputs.version }}
-        sleep 5  # give it time to start
+      - name: Run container
+        run: |
+          docker run -d -p 5000:5000 --name $IMAGE_NAME $IMAGE_NAME:${{ steps.set-version.outputs.version }}
+          sleep 5
 
-    # Step 5: Perform curl check on the running container
-    - name: Test endpoint with curl
-      run: |
-        curl -f http://localhost:5000
+      - name: Test endpoint with curl
+        run: |
+          curl -f http://localhost:5000
 
-    # Step 6: Save Docker image for reuse
-    - name: Save Docker image as artifact
-      run: |
-        docker save $IMAGE_NAME:${{ steps.set-version.outputs.version }} | gzip > $IMAGE_NAME.tar.gz
+      - name: Save Docker image as artifact
+        run: |
+          docker save $IMAGE_NAME:${{ steps.set-version.outputs.version }} | gzip > flask-app.tar.gz
 
-    - name: Upload Docker image artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: flask-docker-image
-        path: flask-app.tar.gz
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: flask-docker-image
+          path: flask-app.tar.gz
 
   e2e-tests:
-  name: 🔍 E2E Tests
-  needs: build-and-test
-  runs-on: ubuntu-latest
+    name: 🔍 E2E Tests
+    needs: build-and-test
+    runs-on: ubuntu-latest
 
-  steps:
-  # Step 1: Checkout source (to get docker-compose.yml)
-  - name: Checkout source code
-    uses: actions/checkout@v3
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
 
-  # Step 2: Download Docker image artifact
-  - name: Download Docker image artifact
-    uses: actions/download-artifact@v3
-    with:
-      name: flask-docker-image
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: flask-docker-image
 
-  # Step 3: Load Docker image into Docker
-  - name: Load Docker image
-    run: |
-      gunzip -c flask-app.tar.gz | docker load
+      - name: Load Docker image
+        run: |
+          gunzip -c flask-app.tar.gz | docker load
 
-  # Step 4: Start services with Docker Compose
-  - name: Run docker-compose
-    run: |
-      docker-compose up -d
-      sleep 5  # give time for app to initialize
+      - name: Run docker-compose
+        run: |
+          docker-compose up -d
+          sleep 5
 
-  # Step 5: Test the app endpoint with curl
-  - name: Test endpoint with curl
-    run: |
-      curl -f http://localhost:5000/
+      - name: Test endpoint with curl
+        run: |
+          curl -f http://localhost:5000/
 
-  # Step 6: Tear down the docker-compose environment
-  - name: Stop Docker Compose
-    if: always()
-    run: docker-compose down
-
+      - name: Stop Docker Compose
+        if: always()
+        run: docker-compose down
 
   push-to-ecr:
     name: 🚀 Push to AWS ECR
@@ -101,34 +88,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Download Docker image artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: flask-docker-image
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: flask-docker-image
 
-    - name: Load Docker image
-      run: |
-        gunzip -c flask-app.tar.gz | docker load
+      - name: Load Docker image
+        run: |
+          gunzip -c flask-app.tar.gz | docker load
 
-    - name: Set image version
-    id: set-version
-    run: |
-      VERSION=latest-$(date +%Y%m%d)-${GITHUB_SHA::7}
-      echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - name: Set image version
+        id: set-version
+        run: |
+          VERSION=latest-$(date +%Y%m%d)-${GITHUB_SHA::7}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-  - name: Configure AWS credentials
-    uses: aws-actions/configure-aws-credentials@v3
-    with:
-      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      aws-region: ap-south-1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
 
-  - name: Login to Amazon ECR
-    run: |
-      aws ecr get-login-password --region ap-south-1 \
-        | docker login --username AWS --password-stdin 884394270539.dkr.ecr.ap-south-1.amazonaws.com
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ap-south-1 \
+            | docker login --username AWS --password-stdin 884394270539.dkr.ecr.ap-south-1.amazonaws.com
 
-  - name: Tag and push Docker image
-    run: |
-      docker tag development/entry-trucker:latest 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/entry-trucker:$VERSION
-      docker push 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/entry-trucker:$VERSION
+      - name: Tag and push Docker image
+        run: |
+          docker tag development/entry-trucker:latest 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/entry-trucker:$VERSION
+          docker push 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/entry-trucker:$VERSION
+
