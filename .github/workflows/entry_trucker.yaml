@@ -157,37 +157,49 @@ jobs:
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/alon-gr.pem
-          chmod 400 ~/.ssh/alon-gr.pem
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 400 ~/.ssh/id_rsa
 
-      - name: SSH and deploy
+      - name: SSH - Configure AWS CLI and login to ECR
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/alon-gr.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
-
-            echo "🔐 Logging in to ECR..."
-            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws configure set default.region ap-south-1
-
-            aws ecr get-login-password --region ap-south-1 \
+            aws configure set aws_access_key_id '${{ secrets.AWS_ACCESS_KEY_ID }}'
+            aws configure set aws_secret_access_key '${{ secrets.AWS_SECRET_ACCESS_KEY }}'
+            aws configure set default.region '${{ secrets.AWS_REGION }}'
+            aws ecr get-login-password --region '${{ secrets.AWS_REGION }}' \
               | docker login --username AWS --password-stdin 884394270539.dkr.ecr.ap-south-1.amazonaws.com
+          EOF
 
-            echo "📁 Changing to app directory..."
-            cd /home/ubuntu/entry_trucker_develeap
-
-            echo "📉 Stopping old container..."
+      - name: SSH - Stop running Docker containers
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            cd /home/ubuntu/entry-tracker
             docker compose down
+          EOF
 
-            echo "�� Updating .env with new version..."
+      - name: SSH - Update .env version variable
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+            set -e
+            cd /home/ubuntu/entry-tracker
             sed -i 's/^VERSION=.*/VERSION=${{ needs.build-and-test.outputs.version }}/' .env
+          EOF
 
-            echo "�� Pulling updated image from ECR..."
+      - name: SSH - Pull latest image from ECR
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            cd /home/ubuntu/entry-tracker
             docker compose pull
+          EOF
 
-            echo "🚀 Starting new container..."
+      - name: SSH - Start containers with new version
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            cd /home/ubuntu/entry-tracker
             docker compose up -d
-
-            echo "✅ Deployment complete"
           EOF
 
