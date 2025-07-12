@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   web:
-    build: .
+    build: 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/entry-trucker:${VERSION}
     container_name: flask-app
     environment:
       - DB_HOST=${DB_HOST}

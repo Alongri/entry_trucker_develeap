@@ -1,4 +1,4 @@
-# 🚀 Entry Trucker (Flask + MySQL + Docker + CI/CD)
+# 🚀 Entry Trucker (Flask & MySQL using  Docker on CI/CD)
 
 This project is a **Flask-based web application** that logs requests into a MySQL database and exposes an API endpoint. It is fully containerized using Docker and integrated with **GitHub Actions CI/CD**, including Docker-based validation and deployment to **AWS ECR**.
 
