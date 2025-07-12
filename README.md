@@ -17,17 +17,6 @@ This project is a **Flask-based web application** that logs requests into a MySQ
 
 ---
 
-## 🏃‍♂️ Run Locally (Without Docker)
-
-```bash
-pip install -r requirements.txt
-python app.py
-```
-
-Visit: [http://localhost:5000](http://localhost:5000)
-
----
-
 ## 🐳 Docker Usage
 
 ### Build & Run Manually
