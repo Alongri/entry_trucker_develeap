@@ -147,7 +147,7 @@ jobs:
 
   deploy:
     name: 🚀 Deploy to EC2
-    needs: [push-to-ecr]
+    needs: [build-and-test, e2e-tests, push-to-ecr]
     runs-on: ubuntu-latest
 
     steps:
