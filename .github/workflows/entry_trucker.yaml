@@ -162,7 +162,7 @@ jobs:
 
       - name: SSH - Configure AWS CLI and login to ECR
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -i ~/.ssh/alon-gr.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
             aws configure set aws_access_key_id '${{ secrets.AWS_ACCESS_KEY_ID }}'
             aws configure set aws_secret_access_key '${{ secrets.AWS_SECRET_ACCESS_KEY }}'
@@ -173,33 +173,33 @@ jobs:
 
       - name: SSH - Stop running Docker containers
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -i ~/.ssh/alon-gr.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
-            cd /home/ubuntu/entry-tracker
+            cd /home/ubuntu/entry_trucker_develeap
             docker compose down
           EOF
 
       - name: SSH - Update .env version variable
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          ssh -i ~/.ssh/alon-gr.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             set -e
-            cd /home/ubuntu/entry-tracker
+            cd /home/ubuntu/entry_trucker_develeap
             sed -i 's/^VERSION=.*/VERSION=${{ needs.build-and-test.outputs.version }}/' .env
           EOF
 
       - name: SSH - Pull latest image from ECR
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -i ~/.ssh/alon-gr.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
-            cd /home/ubuntu/entry-tracker
+            cd /home/ubuntu/entry_trucker_develeap
             docker compose pull
           EOF
 
       - name: SSH - Start containers with new version
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -i ~/.ssh/alon-gr.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
-            cd /home/ubuntu/entry-tracker
+            cd /home/ubuntu/entry_trucker_develeap
             docker compose up -d
           EOF
 
