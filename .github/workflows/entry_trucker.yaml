@@ -19,7 +19,7 @@ jobs:
       contents: write
 
     outputs:
-      version: ${{ steps.set-version.outputs.version }}
+      version: ${{ steps.bump-version.outputs.version }}
 
     steps:
       - name: Checkout source code
@@ -49,11 +49,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t $IMAGE_NAME:${{ steps.set-version.outputs.version }} .
+          docker build -t $IMAGE_NAME:${{ steps.bump-version.outputs.version }} .
 
       - name: Run container
         run: |
-          docker run -d -p 5000:5000 --name $IMAGE_NAME $IMAGE_NAME:${{ steps.set-version.outputs.version }}
+          docker run -d -p 5000:5000 --name $IMAGE_NAME $IMAGE_NAME:${{ steps.bump-version.outputs.version }}
           sleep 5
 
       - name: Test endpoint with curl
@@ -62,7 +62,7 @@ jobs:
 
       - name: Save Docker image as artifact
         run: |
-          docker save $IMAGE_NAME:${{ steps.set-version.outputs.version }} | gzip > flask-app.tar.gz
+          docker save $IMAGE_NAME:${{ steps.bump-version.outputs.version }} | gzip > flask-app.tar.gz
 
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v4
