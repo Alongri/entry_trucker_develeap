@@ -92,6 +92,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
         with:
