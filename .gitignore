@@ -1,0 +1,96 @@
+# ---- General OS Files ----
+.DS_Store
+Thumbs.db
+backups
+
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.pyo
+*.pyd
+*.whl
+*.so
+*.dist-info/
+
+
+# Virtual environments
+*.env
+.venv/
+
+# ---- Java ----
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+*.ipr
+*.iws
+*.project
+*.classpath
+*.settings/
+.gradle/
+.mvn/
+
+
+# ---- C / C++ / C# ----
+*.exe
+*.dll
+*.obj
+*.o
+*.a
+*.lib
+*.nupkg
+*.pdb
+*.ilk
+*.exp
+*.idb
+*.ipch
+.vscode/
+*.suo
+*.user
+*.vcxproj*
+*.csproj*
+*.test
+*.mod
+*.sum
+
+# ---- Logs ----
+*.log
+debug.log
+nohup.out
+
+# ---- Database and Credentials ----
+*.sqlite
+*.db
+*.p12
+*.pem
+*.key
+*.crt
+*.cert
+.npmrc
+.netrc
+
+# ---- IDEs and Editors ----
+# JetBrains IDEs (PyCharm, IntelliJ, WebStorm)
+.idea/
+# VS Code
+.history/
+*.code-workspace
+# Eclipse
+.metadata/
+.settings/
+.classpath
+.project
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# ---- Miscellaneous ----
+*.swp
+*.bak
+*.orig
+*.tmp
+*.lock
+*.pid
