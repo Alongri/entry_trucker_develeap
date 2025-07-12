@@ -157,8 +157,8 @@ jobs:
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 400 ~/.ssh/id_rsa
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/alon-gr.pem
+          chmod 400 ~/.ssh/alon-gr.pem
 
       - name: SSH - Configure AWS CLI and login to ECR
         run: |
